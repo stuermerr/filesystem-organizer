@@ -1,82 +1,70 @@
 # Filesystem Organizer
 
 [![CI](https://github.com/stuermerr/filesystem-organizer/actions/workflows/ci.yml/badge.svg)](https://github.com/stuermerr/filesystem-organizer/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](pyproject.toml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> A local, safety-first CLI for consolidating and reorganizing stable filesystem collections while preserving the originals by default.
+A local, safety-first CLI for consolidating historical backups and other stable
+filesystem collections without changing the source by default.
 
-Filesystem Organizer inventories one quiescent **Selected Backup Root**, proves byte-for-byte duplicates, compares compatible directory trees, and creates a reviewable **Consolidation Plan**. Historical backup collections are the primary use case, but any explicitly selected, stable filesystem collection can use the same reviewed workflow. The CLI only writes a result after the plan has been finalized and explicitly approved.
+Filesystem Organizer inventories one quiescent **Selected Backup Root**, proves
+byte-identical files, compares compatible directory trees, and builds a
+reviewable **Consolidation Plan**. After review, it creates a separate
+**Materialized Consolidation** with atomic publication and no-overwrite
+protection.
 
-The normal workflow creates a separate **Materialized Consolidation** and leaves the source untouched. A separately acknowledged `--in-place` mode exists for constrained historical backup volumes, but is destructive and is never the default.
-
-**Supported platform:** Linux. Version 0.1.0 is implemented and verified on Linux; in-place mode remains advanced and experimental.
+> [!IMPORTANT]
+> The Selected Backup Root must remain unchanged from scan through
+> materialization. This is not a live-folder organizer, synchronization tool,
+> semantic file classifier, or automatic deletion utility.
 
 ## Why use it?
 
-- **Source-preserving by default.** Scanning, reporting, and planning do not modify the Selected Backup Root. Normal materialization writes to a separate destination.
-- **Content-proven deduplication.** Exact Duplicate Groups require a full BLAKE3-256 identity; matching names, paths, sizes, or timestamps are not treated as proof.
-- **Durable, reviewable evidence.** Every scan produces an Analysis Run containing inventory evidence, findings, plans, and recovery state.
-- **Safe structural consolidation.** Directory analysis distinguishes identical, contained, union-compatible, and conflicting trees.
-- **Explicit approval gates.** Plans remain drafts until reviewed and finalized. Materialization requires the exact finalized plan ID and user approval.
-- **Visible uncertainty.** Symbolic links, unreadable files, changed files, and special entries become Skipped Entry Findings instead of being silently followed or discarded.
-- **Custom output layouts.** A draft plan can be reorganized with deterministic subtree rules and exact-entry exceptions that are validated before application.
-- **Interruption recovery.** Scan and materialization state is persisted so an interrupted operation can be inspected and, where supported, resumed safely.
+- **Preserves the source by default.** Scanning, planning, and normal
+  materialization never modify the Selected Backup Root.
+- **Proves duplicates by content.** Exact Duplicate Groups use full BLAKE3-256
+  identities; names, paths, sizes, and timestamps are not treated as proof.
+- **Keeps evidence reviewable.** Each Analysis Run persists inventory,
+  structural findings, plans, layout revisions, and execution state.
+- **Consolidates directory structure safely.** Identical, contained,
+  union-compatible, and conflicting directory trees receive distinct,
+  deterministic treatment.
+- **Makes uncertainty visible.** Symbolic links, unreadable files, changed
+  files, and special entries become Skipped Entry Findings instead of being
+  silently followed or discarded.
+- **Supports deliberate layouts.** Validated rules can place, rename, merge,
+  or exclude exact plan entries without changing file bytes.
+- **Fails closed.** Source drift, stale revisions, unsafe destinations,
+  insufficient space, and ambiguous recovery state stop execution.
 
-## Scope
+## Status and scope
 
-This project is for **Safe Filesystem Consolidation and Reorganization**: an explicitly selected collection that remains stable while it is analyzed, planned, and materialized. Years of copied, renamed, modified, or nested drive backups are the motivating example, not the only eligible input.
+The repository targets version `0.1.0`. Linux is the only supported and
+verified platform for this release.
 
-It is not a live folder organizer, a continuously running Downloads cleaner, a semantic file classifier, or an autonomous deletion tool. Active working directories must first be copied or made quiescent. The deterministic workflow operates on filesystem metadata, full content identities, and directory structure; it does not inspect file contents to infer categories. Users can still design a meaningful final directory structure through reviewed, exact Custom Layout rules.
+The implemented local workflow includes checkpointed scanning, exact duplicate
+detection, structural analysis, draft and finalized plans, Custom Layout
+revisions, source-preserving materialization, and interruption recovery. An
+explicitly acknowledged in-place mode is also available for constrained
+historical backup volumes, but it is destructive and is never the default.
 
-## Current implementation
-
-Version `0.1.0` implements the complete local lifecycle for:
-
-- checkpointed scan and resume;
-- exact duplicate detection and reviewable Canonical Copy selection;
-- deterministic directory relationships, Structural Unions, and lossless conflict projection;
-- persisted draft plans, overrides, Custom Layout revisions, and immutable finalization;
-- bounded reports for large inventories and output trees;
-- source-preserving materialization with preflight, exact approval, source revalidation, no-overwrite behavior, and interruption recovery; and
-- an explicitly acknowledged in-place mode for quiescent historical backup roots.
-
-The repository currently has no graphical interface or semantic content-analysis stage.
-
-### Performance expectations
-
-The safety model deliberately favors evidence and recoverability over raw copy
-speed. A recorded 62,676-entry, 17.23-GB backup scan completed in about one
-minute, while conflict-heavy planning took about four minutes and conservative
-materialization took about 29 minutes. Results depend strongly on storage,
-filesystem, file count, and conflict shape. Large collections should be tested
-with enough free space and time before relying on a production run.
-
-Custom Layout edits use indexed, incremental revisions. Small edits are tested
-against 10k and 100k projections in normal CI; a scheduled benchmark exercises
-100k and 1M projections. General plan construction, high-fanout structural
-candidates, and materialization throughput remain optimization areas. Source
-revalidation, content verification, durable publication, and crash recovery
-are not relaxed for performance.
+There is currently no graphical interface or semantic content-analysis stage.
 
 ## Getting started
 
 ### Requirements
 
+- Linux
 - Python 3.12 or newer
 - [`uv`](https://docs.astral.sh/uv/)
+- Enough free space for a separate consolidated result
 
-Clone the repository and create the environment from the committed lockfile:
+Clone the repository and create the locked environment:
 
 ```console
 git clone https://github.com/stuermerr/filesystem-organizer.git
 cd filesystem-organizer
 uv sync --locked
-```
-
-Confirm that the CLI is available:
-
-```console
 uv run filesystem-organizer --help
 ```
 
@@ -84,78 +72,90 @@ uv run filesystem-organizer --help
 
 Choose two separate locations:
 
-- **Selected Backup Root:** the historical backup collection to inspect.
-- **Run Output Root:** storage for Analysis Runs and default materialized results. It must be outside the Selected Backup Root.
+- **Selected Backup Root:** the stable collection to inspect.
+- **Run Output Root:** storage for Analysis Runs and materialized results. It
+  must be outside the Selected Backup Root.
 
-Start a scan:
+Scan the source:
 
 ```console
 uv run filesystem-organizer scan /path/to/historical-backups \
   --output-root /path/to/run-output
 ```
 
-The command prints JSON containing `run_id`, `snapshot_id`, and `analysis_run`. Progress is written to stderr, leaving stdout safe to parse. Use the returned `analysis_run` path as `RUN_PATH` below.
+The command writes progress to stderr and prints JSON to stdout. Record the
+returned `analysis_run` path as `RUN_PATH`.
+
+Review the evidence, create a plan, and inspect the proposed result:
 
 ```console
-# Review concise run facts, skipped entries, and conflicts.
 uv run filesystem-organizer report RUN_PATH
-
-# Create and review a draft plan.
 uv run filesystem-organizer plan RUN_PATH
-# Record the returned plan_id as PLAN_ID, then keep every later command bound to it.
+
+# Record the returned plan_id as PLAN_ID.
 uv run filesystem-organizer plan-report RUN_PATH --plan-id PLAN_ID
-
-# Optionally select a different copy from an Exact Duplicate Group.
-uv run filesystem-organizer plan-override RUN_PATH \
-  'relative/source/path' 'Reason this copy should be retained' \
-  --plan-id PLAN_ID
-
-# Freeze the reviewed plan.
-uv run filesystem-organizer plan-finalize RUN_PATH --plan-id PLAN_ID
-
-# Validate the finalized plan, destination, source evidence, and free space.
-uv run filesystem-organizer materialize-preflight RUN_PATH PLAN_ID
-
-# Materialize after reviewing the preflight result.
-uv run filesystem-organizer materialize RUN_PATH PLAN_ID
+uv run filesystem-organizer plan-report RUN_PATH --plan-id PLAN_ID \
+  --section structure --depth 4
 ```
 
-In an interactive terminal, `materialize` displays the plan and destination and asks you to type `yes`. In an explicitly approved non-interactive workflow, pass the exact `PLAN_ID` with `--yes`.
+The plan report identifies the active layout revision. Materialize that exact
+revision after reviewing the destination and proposed structure:
 
-For detailed audit evidence, request the full reports. High-cardinality conflicts
-and Skipped Entry Findings remain bounded to a 20-item sample even in full reports;
-request their complete evidence through explicit pages:
+```console
+uv run filesystem-organizer materialize RUN_PATH PLAN_ID --revision REVISION
+```
+
+In a terminal, the CLI displays the current preflight facts and asks for a
+standalone confirmation. For explicitly approved non-interactive execution,
+bind approval to the same revision:
+
+```console
+uv run filesystem-organizer materialize RUN_PATH PLAN_ID \
+  --revision REVISION --yes
+```
+
+Normal materialization finalizes the specified draft revision, repeats its
+lightweight safety checks under lock, stages the complete result, and publishes
+it atomically only if the final destination does not already exist. The source
+remains unchanged.
+
+### Review detailed evidence
+
+Summary reports are bounded for large collections. Request a full report or
+page a high-cardinality section when needed:
 
 ```console
 uv run filesystem-organizer report RUN_PATH --detail full
-uv run filesystem-organizer report RUN_PATH \
-  --section inventory --offset 0 --limit 100
 uv run filesystem-organizer report RUN_PATH \
   --section skipped --offset 0 --limit 100
 uv run filesystem-organizer report RUN_PATH \
   --section conflicts --offset 0 --limit 100
 uv run filesystem-organizer plan-report RUN_PATH --plan-id PLAN_ID \
-  --section conflicts --offset 0 --limit 100
-uv run filesystem-organizer plan-report RUN_PATH --plan-id PLAN_ID --detail full
+  --section operations --offset 0 --limit 100
 ```
 
-### Customize the result layout
+## Customize the output layout
 
-Custom Layout is a structure-only customization layer: it can place, rename, merge, or exclude baseline entries and create empty directories, but it never edits file bytes, converts formats, or unpacks archives. Rules operate on the immutable Baseline Projection of a draft plan. Export the current revision instead of writing a layout file from scratch:
+Custom Layout rules operate on a plan's immutable Baseline Projection. They can
+place or exclude a subtree, override one exact entry, and create intentional
+empty directories. They cannot edit file contents, convert formats, or unpack
+archives.
+
+Export the current layout before editing it:
 
 ```console
 uv run filesystem-organizer plan-layout-export RUN_PATH PLAN_ID \
   --output layout.json
 ```
 
-For example, this rule moves the `documents` subtree beneath `Notes`, preserves unmatched entries, and creates an intentional empty directory:
+A minimal exported layout has this shape:
 
 ```json
 {
   "layout_schema_version": 2,
   "plan_id": "PLAN_ID",
   "base_revision": 0,
-  "baseline_fingerprint": "FINGERPRINT_FROM_EXPORTED_LAYOUT",
+  "baseline_fingerprint": "FINGERPRINT_FROM_EXPORT",
   "unmatched": "preserve",
   "rules": [
     {
@@ -169,34 +169,51 @@ For example, this rule moves the `documents` subtree beneath `Notes`, preserves 
 }
 ```
 
-`rules` select exact source subtrees. `place_under` replaces the selected root while preserving descendant paths; `exclude` explicitly omits the selected subtree. `entry_exceptions` use a stable `entry_id` from CLI evidence to place or exclude one entry. The deepest matching subtree rule wins, and an exact-entry exception wins over every subtree rule. Unmatched entries are always preserved.
-
-Validate the complete result, apply it atomically, and inspect the persisted structure before finalizing:
+Validate the entire result, apply it as a new immutable revision, and inspect
+the persisted structure:
 
 ```console
 uv run filesystem-organizer plan-layout-validate RUN_PATH PLAN_ID layout.json
 uv run filesystem-organizer plan-layout-apply RUN_PATH PLAN_ID layout.json
 uv run filesystem-organizer plan-report RUN_PATH --plan-id PLAN_ID \
-  --section structure --depth 3
+  --section structure --depth 4
 ```
 
-Validation is non-mutating and returns all errors, acknowledgement requirements, and warnings together. Applying produces a new immutable revision and refuses a stale `base_revision`; re-export before the next edit. Use `--acknowledge-exclusions` only after reviewing explicit exclusions, and add `--acknowledge-content-empty` when validation reports `placed_content_entry_count: 0`. A Content-Empty Result also requires a separate approval after materialization preflight.
+An apply refuses a stale `base_revision`. Explicit exclusions require
+`--acknowledge-exclusions`; a result that places no baseline files also requires
+`--acknowledge-content-empty`. Re-export before making another edit.
 
-For in-place planning, every Skipped Entry Finding needs an explicit `skipped_actions` decision: `retain` leaves it unchanged as an Unmanaged Retention, while `exclude` authorizes its omission subject to validation and acknowledgement. Separate-destination materialization never changes the skipped source entry.
+## Expert and in-place workflows
 
-### In-place mode
-
-`--in-place` destructively applies the finalized Plan Projection inside the Selected Backup Root. It is intended only for a quiescent historical copy when a separate destination is impractical.
-
-The mode does not accept `--destination`, requires `--acknowledge-destructive` in addition to normal approval, and protects retained files with hard links before changing source names. Interactive approval requires typing the exact Selected Backup Root. Always run the matching preflight first:
-
-If the Analysis Run contains Skipped Entry Findings, an applied Custom Layout must first assign each one an explicit `retain` or `exclude` action in `skipped_actions`; in-place preflight refuses an unresolved finding.
+`plan-finalize` and `materialize-preflight` are available for automation and
+advanced review:
 
 ```console
+uv run filesystem-organizer plan-finalize RUN_PATH --plan-id PLAN_ID
+uv run filesystem-organizer materialize-preflight RUN_PATH PLAN_ID
+uv run filesystem-organizer materialize RUN_PATH PLAN_ID --yes
+```
+
+Preflight is point-in-time evidence, not durable authorization. Materialization
+always repeats its internal checks.
+
+### Destructive in-place mode
+
+In-place execution applies a finalized Plan Projection inside the Selected
+Backup Root. Use it only on a quiescent historical copy when a separate
+destination is impractical.
+
+```console
+uv run filesystem-organizer plan-finalize RUN_PATH --plan-id PLAN_ID
 uv run filesystem-organizer materialize-preflight RUN_PATH PLAN_ID --in-place
 uv run filesystem-organizer materialize RUN_PATH PLAN_ID \
   --in-place --acknowledge-destructive
 ```
+
+The mode does not accept `--destination`. Interactive approval requires typing
+the exact Selected Backup Root; headless execution additionally requires
+`--yes`. If Skipped Entry Findings exist, the applied Custom Layout must first
+assign each one an explicit `retain` or `exclude` action.
 
 ## Safety model
 
@@ -206,41 +223,60 @@ Selected Backup Root ──scan──> Analysis Run ──plan──> Draft Plan
                                                      review / customize
                                                               │
                                                               ▼
-                                                     Finalized Plan ──approve──> Materialized Consolidation
-                                                                               (separate destination)
+                                                   exact revision approval
+                                                              │
+                                                              ▼
+                                               Materialized Consolidation
+                                                (separate destination)
 ```
 
-Before copying, the CLI revalidates the finalized projection, selected source evidence, structural snapshots, destination shape, and available space. A destination override must remain outside the Selected Backup Root, and a non-empty unrelated destination is refused.
+Before normal materialization, the CLI checks the plan and layout revision,
+source metadata, destination shape, filesystem capabilities, locks, and free
+space. It then:
 
-Materialization is resumable after an interrupted owned publication. A completed destination is never reused automatically. It retains every unique readable file and one deterministic Canonical Copy per Exact Duplicate Group. Compatible directory trees form Structural Unions. Conflicting trees use a lossless projection that keeps a uniquely newest regular-file variant at the conventional path and preserves all other variants in deterministic conflict paths.
+1. creates a plan-owned partial tree beside the destination;
+2. uses native cloning when supported or a verified streaming copy fallback;
+3. makes the completed staging tree durable;
+4. publishes it with an atomic no-replace operation; and
+5. records a durable Materialization Attempt.
 
-## CLI reference
+An incomplete tree is never exposed as the final destination. A repeated call
+for the same completed plan is idempotent, while foreign, damaged, or ambiguous
+staging state is refused for manual review.
 
-Run `uv run filesystem-organizer COMMAND --help` for complete flags and arguments.
+The tool preserves every unique readable file and one deterministic Canonical
+Copy from each Exact Duplicate Group. Compatible directory trees form
+Structural Unions. Conflicts use a lossless projection that retains every
+variant in deterministic paths.
+
+## CLI overview
+
+Run `uv run filesystem-organizer COMMAND --help` for complete arguments.
 
 | Command | Purpose |
 | --- | --- |
-| `scan ROOT --output-root OUTPUT_ROOT` | Create a persisted Analysis Run for one backup root. |
-| `report RUN_PATH` | Render bounded run facts or requested full/paged evidence. |
-| `runs [OUTPUT_ROOT]` | List Analysis Runs beneath a Run Output Root. |
-| `status RUN_PATH` | Inspect persisted run, plan, and recovery state. |
-| `resume RUN_PATH` | Continue an interrupted scan from its checkpoint. |
-| `plan RUN_PATH` | Create a draft Consolidation Plan for a completed run. |
-| `plan-report RUN_PATH` | Review plan facts or page operations, structure, exclusions, findings, and conflicts. |
-| `plan-override RUN_PATH SOURCE_PATH REASON` | Change the Canonical Copy selected in a draft plan. |
-| `plan-layout-export RUN_PATH PLAN_ID --output FILE` | Export the current Custom Layout revision. |
-| `plan-layout-validate RUN_PATH PLAN_ID FILE` | Validate a layout without changing the plan. |
-| `plan-layout-apply RUN_PATH PLAN_ID FILE` | Revalidate and atomically apply a layout as a new immutable revision; exclusions and content-empty outcomes require acknowledgements. |
-| `plan-layout-rebuild-active RUN_PATH PLAN_ID --verify` | Verify the rebuildable active projection; `--repair` performs an explicit atomic repair. |
-| `plan-finalize RUN_PATH` | Freeze a reviewed draft plan. |
-| `materialize-preflight RUN_PATH PLAN_ID` | Validate a finalized plan and destination without copying. |
-| `materialize RUN_PATH PLAN_ID` | Materialize an explicitly approved finalized plan. |
+| `scan` | Create a persisted Analysis Run. |
+| `resume` | Continue an interrupted scan from its checkpoint. |
+| `runs` | Discover Analysis Runs below a Run Output Root. |
+| `status` | Inspect persisted run, plan, and recovery state. |
+| `report` | Review run facts and paged evidence. |
+| `plan` | Create a draft Consolidation Plan. |
+| `plan-report` | Review plan facts, structure, exclusions, and conflicts. |
+| `plan-override` | Select another proven-identical Canonical Copy. |
+| `plan-layout-export` | Export the current Custom Layout revision. |
+| `plan-layout-validate` | Validate a layout without changing the plan. |
+| `plan-layout-apply` | Apply a validated layout as a new revision. |
+| `plan-layout-rebuild-active` | Verify or explicitly repair the active projection. |
+| `plan-finalize` | Freeze a draft plan for an expert workflow. |
+| `materialize-preflight` | Check a finalized plan without copying. |
+| `materialize` | Finalize an exact draft revision when needed and create the approved result. |
 
-Successful commands exit with status `0`, safe operational refusals use `1`, and invalid CLI usage uses `2`.
+Successful commands exit with status `0`, safe operational refusals use `1`,
+and invalid CLI usage uses `2`.
 
 ## Development
 
-Install the locked environment and run the quality suite:
+Install the locked environment and run the same quality gate used by CI:
 
 ```console
 uv sync --locked
@@ -249,57 +285,38 @@ uv run mypy filesystem_organizer tests
 uv run pytest
 ```
 
-The same complete gate runs in GitHub Actions.
+Use `uv add PACKAGE` for application dependencies and `uv add --dev PACKAGE`
+for development dependencies. Do not use `uv pip install` to modify project
+dependencies.
 
-The repository uses a committed `uv.lock`. Add application dependencies with `uv add PACKAGE` and development dependencies with `uv add --dev PACKAGE`; do not use `uv pip install` for project dependencies.
+The end-to-end fixture contract is:
 
-### Fixture contract
+- [`example_source/`](example_source/) — immutable historical-backup input;
+- [`example_output/`](example_output/) — expected source-preserving result; and
+- [`tests/test_milestone_gate.py`](tests/test_milestone_gate.py) — the public
+  lifecycle and recovery acceptance gate.
 
-[`example_source/`](example_source/) is immutable historical-backup input and [`example_output/`](example_output/) is the expected source-preserving result. The fixture covers duplicate evidence, skipped-entry reporting, and compatible directory consolidation. Tests copy and reconstruct its metadata from [`example_fixture_manifest.json`](example_fixture_manifest.json).
-
-[`tests/test_milestone_gate.py`](tests/test_milestone_gate.py) is the black-box acceptance gate. It runs the public workflow, checks durable artifacts, compares the materialized tree byte-for-byte with the expected output, and exercises interrupted materialization recovery.
-
-### Scalability benchmark
-
-Record a three-run median of the complete public workflow against fresh fixture copies:
-
-```console
-uv run python scripts/benchmark_example_fixture.py \
-  --label issue-N-description \
-  --history benchmarks/scalability-example.json
-```
-
-Use a distinct label after each cumulative optimization. The append-only history
-records the exact Git state and execution environment, source file and byte
-counts, per-stage time, peak memory, I/O, workspace sizes, structural comparison
-counts, report sizes, journal activity, and materialization results.
+Before making a substantial change, open an issue first, keep the change
+focused, and include tests for observable behavior changes.
 
 ## Documentation and support
 
-- [Custom Layout architecture](ARCHITECTURE.md)
-- [Proof-Driven Content Identity](docs/adr/0004-proof-driven-content-identity.md)
-- [Phase-Level Source-Preserving Materialization](docs/adr/0005-phase-level-source-preserving-materialization.md)
-- [Public-fixture scalability history](benchmarks/scalability-example.json), generated by the documented benchmark command above
-- [GitHub Issues](https://github.com/stuermerr/filesystem-organizer/issues) for questions, bugs, and feature requests
-- [Security policy](SECURITY.md) for confidential vulnerability reporting
+- [Architecture](ARCHITECTURE.md)
+- [Proof-driven content identity](docs/adr/0004-proof-driven-content-identity.md)
+- [Phase-level source-preserving materialization](docs/adr/0005-phase-level-source-preserving-materialization.md)
+- [Security policy](SECURITY.md)
+- [GitHub Issues](https://github.com/stuermerr/filesystem-organizer/issues)
+  for questions, bugs, and feature requests
+
+Report vulnerabilities privately as described in [SECURITY.md](SECURITY.md).
+Do not post sensitive paths, filenames, credentials, or filesystem metadata in
+a public issue.
 
 ## Maintainers and contributing
 
-The project is maintained by [@stuermerr](https://github.com/stuermerr) and its contributors.
-Open an issue before a substantial change, and submit a focused pull request with tests.
-The project is licensed under the [MIT License](LICENSE).
+Filesystem Organizer is maintained by
+[@stuermerr](https://github.com/stuermerr) and its contributors. Contributions
+are welcome; open an issue before a substantial change and submit a focused
+pull request with appropriate tests.
 
-## Agent-assisted workflows
-
-Coding agents are a supported operator and design interface for this project. The repository includes:
-
-- [`filesystem-organizer`](.agents/skills/filesystem-organizer/SKILL.md), which governs scan-only analysis, planning, recovery, safety checks, and approval-gated materialization; and
-- [`consolidation-plan-dialogue`](.agents/skills/consolidation-plan-dialogue/SKILL.md), which helps a user turn a broad desired organization into a concrete, materializable Custom Layout.
-
-In a compatible coding-agent environment, invoke `$filesystem-organizer` with a Selected Backup Root. Add `$consolidation-plan-dialogue` when you want help designing the final target structure. The agent should work top-down from the desired output directories, show compact current and recommended trees, translate accepted choices into exact subtree rules or stable-entry exceptions, validate after every coherent edit, and display the persisted structure after application. The user owns every semantic placement and exclusion decision.
-
-The CLI remains the execution and safety boundary. An agent must use public commands, keep the exact Analysis Run and plan ID explicit, and treat CLI JSON and Markdown as evidence. It must not edit `analysis.sqlite3`, hand-author a finalized projection, duplicate hashing or planning logic, infer recovery candidates, or bypass acknowledgement and materialization gates. A successful scan, accepted layout, or finalized plan is not approval to materialize.
-
-For an AI handoff, have the agent read both skills before running the CLI. Existing work should be recovered with `runs` and `status`; if more than one run or plan is available, the user must select the intended one.
-
-Scanning, hashing, planning, and copying are local CLI operations. Agent use can expose filesystem metadata—including paths, filenames, timestamps, sizes, identities, structural evidence, Canonical Copy reasons, and Skipped Entry Findings—to the selected agent provider's model context. It does not provide a separate local-only agent mode; use the CLI directly when that metadata handling is not appropriate.
+The project is available under the [MIT License](LICENSE).
