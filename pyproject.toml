@@ -9,6 +9,13 @@ description = "Safe filesystem consolidation and reorganization CLI"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Filesystems",
+]
 dependencies = [
     "blake3>=1.0.9",
     "tqdm>=4.70.0",

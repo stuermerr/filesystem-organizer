@@ -10,6 +10,8 @@ Filesystem Organizer inventories one quiescent **Selected Backup Root**, proves 
 
 The normal workflow creates a separate **Materialized Consolidation** and leaves the source untouched. A separately acknowledged `--in-place` mode exists for constrained historical backup volumes, but is destructive and is never the default.
 
+**Supported platform:** Linux. Version 0.1.0 is implemented and verified on Linux; in-place mode remains advanced and experimental.
+
 ## Why use it?
 
 - **Source-preserving by default.** Scanning, reporting, and planning do not modify the Selected Backup Root. Normal materialization writes to a separate destination.
