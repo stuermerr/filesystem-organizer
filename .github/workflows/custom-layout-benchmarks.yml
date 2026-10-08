@@ -1,0 +1,25 @@
+name: Custom Layout scalability benchmarks
+
+on:
+  schedule:
+    - cron: '17 3 * * 0'
+  workflow_dispatch:
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          python-version: '3.12'
+      - run: uv python install 3.12
+      - run: uv sync --locked
+      - name: Run the complete 100k and 1M benchmark matrices
+        run: uv run python scripts/benchmark_custom_layout.py --sizes 100000 1000000 --repetitions 3 --output custom-layout-benchmarks.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: custom-layout-benchmarks
+          path: custom-layout-benchmarks.json

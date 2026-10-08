@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "filesystem-organizer"
+version = "0.1.0"
+description = "Safe filesystem consolidation and reorganization CLI"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+dependencies = [
+    "blake3>=1.0.9",
+    "tqdm>=4.70.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/stuermerr/filesystem-organizer"
+Issues = "https://github.com/stuermerr/filesystem-organizer/issues"
+Repository = "https://github.com/stuermerr/filesystem-organizer"
+
+[project.scripts]
+filesystem-organizer = "filesystem_organizer.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["filesystem_organizer*"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+[tool.pytest.ini_options]
+addopts = ["--strict-config", "--strict-markers"]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+
+[dependency-groups]
+dev = [
+    "mypy>=2.3.0",
+    "pytest>=9.1.1",
+    "ruff>=0.16.2",
+    "types-tqdm>=4.70.0.20260805",
+]

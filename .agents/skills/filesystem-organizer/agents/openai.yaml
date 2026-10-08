@@ -1,0 +1,4 @@
+interface:
+  display_name: "Filesystem Organizer"
+  short_description: "Safely consolidate a stable filesystem tree"
+  default_prompt: "Use $filesystem-organizer to analyze or consolidate my stable filesystem collection safely."

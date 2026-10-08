@@ -1,0 +1,4 @@
+interface:
+  display_name: "Consolidation Plan Dialogue"
+  short_description: "Co-design a Custom Layout for backup consolidation"
+  default_prompt: "Use $consolidation-plan-dialogue to help me shape and finalize a Custom Layout for a stable filesystem collection."

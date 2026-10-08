@@ -1,0 +1,21 @@
+docs/*
+!docs/adr/
+docs/adr/*
+!docs/adr/0004-proof-driven-content-identity.md
+!docs/adr/0005-phase-level-source-preserving-materialization.md
+.codegraph/
+.opencode/
+__pycache__/
+.mypy_cache/
+.tmp/
+output/
+*.egg-info/
+dist/
+build/
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Markdown files
+IDEAS.md
+Intermediate-Project-Report.md
